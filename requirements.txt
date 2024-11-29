@@ -5,3 +5,4 @@ numpy
 matplotlib
 reportlab==4.2.5
 setuptools
+scikit-learn
