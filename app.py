@@ -11,7 +11,7 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Spacer, Image
 
 # Load model dan tampilkan akurasi
-model = joblib.load('model_rf.pkl')
+model = joblib.load('model_rf2.pkl')
 mape_value = 12.20  # Nilai MAPE model
 rmse_value = 204890.42  # Nilai RMSE model
 model_accuracy = 87.8
