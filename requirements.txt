@@ -6,3 +6,4 @@ matplotlib
 reportlab==4.2.5
 setuptools
 scikit-learn==1.5.2
+xlsxwriter
