@@ -11,10 +11,10 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle, SimpleDocTemplate, Spacer, Image
 
 # Load model dan tampilkan akurasi
-model = joblib.load('model_rf2.pkl')
-mape_value = 12.20  # Nilai MAPE model
-rmse_value = 204890.42  # Nilai RMSE model
-model_accuracy = 87.8
+model = joblib.load('model_rf3.pkl')
+mape_value = 12.78  # Nilai MAPE model
+rmse_value = 196069  # Nilai RMSE model
+model_accuracy = 87.22
 
 # Konfigurasi tema dark mode pada matplotlib
 plt.style.use('dark_background')
@@ -78,8 +78,10 @@ if input_option == "Input Manual":
     waktu_tonton = st.number_input("Waktu tonton (jam)", min_value=0)
     subscriber = st.number_input("Subscriber", min_value=0)
     tayangan = st.number_input("Tayangan", min_value=0)
+    hari_sejak_publikasi = st.number_input("Hari sejak publikasi", min_value=0)
 
     input_data = pd.DataFrame({
+        'Hari sejak publikasi': [hari_sejak_publikasi],
         'Waktu tonton (jam)': [waktu_tonton],
         'Pembagian': [pembagian],
         'Tidak suka': [tidak_suka],
@@ -89,6 +91,7 @@ if input_option == "Input Manual":
         'Subscriber': [subscriber],
         'Tayangan': [tayangan]
     })
+
 
     if st.button("Prediksi Penayangan"):
         prediction = predict(input_data)[0]
@@ -121,26 +124,37 @@ else:
     st.write("Pastikan urutan kolom csv: ")
     st.markdown("""
         1. Judul video
-        2. Waktu tonton (jam)
-        3. Pembagian
-        4. Tidak suka
-        5. Suka
-        6. Subscriber yang hilang
-        7. Subscriber yang diperoleh
-        8. Subscriber
-        9. Tayangan
-        10. Penayangan
+        2. Waktu publikasi video
+        3. Waktu tonton (jam)
+        4. Pembagian
+        5. Tidak suka
+        6. Suka
+        7. Subscriber yang hilang
+        8. Subscriber yang diperoleh
+        9. Subscriber
+        10. Tayangan
+        11. Penayangan
     """)
     uploaded_file = st.file_uploader("Pilih file CSV", type="csv")
 
     if uploaded_file is not None:
         data_csv = pd.read_csv(uploaded_file)
-        expected_columns = ['Judul video', 'Waktu tonton (jam)', 'Pembagian', 'Tidak suka', 'Suka', 
-                            'Subscriber yang hilang', 'Subscriber yang diperoleh', 'Subscriber', 
-                            'Tayangan', 'Penayangan']
+        expected_columns = ['Judul video', 'Waktu publikasi video', 'Waktu tonton (jam)', 'Pembagian', 
+                            'Tidak suka', 'Suka', 'Subscriber yang hilang', 'Subscriber yang diperoleh', 
+                            'Subscriber', 'Tayangan', 'Penayangan']
 
         if all(column in data_csv.columns for column in expected_columns):
-            predictions = predict(data_csv[expected_columns[1:-1]])
+            # Konversi kolom 'Waktu publikasi video' ke datetime
+            data_csv['Waktu publikasi video'] = pd.to_datetime(data_csv['Waktu publikasi video'], format='%b %d, %Y', errors='coerce')
+            
+            # Hitung hari sejak publikasi
+            reference_date = pd.Timestamp.now()
+            data_csv['Hari sejak publikasi'] = (reference_date - data_csv['Waktu publikasi video']).dt.days
+            
+            # Prediksi menggunakan model
+            predictions = predict(data_csv[['Hari sejak publikasi', 'Waktu tonton (jam)', 'Pembagian', 'Tidak suka', 'Suka', 
+                                            'Subscriber yang hilang', 'Subscriber yang diperoleh', 
+                                            'Subscriber', 'Tayangan']])
             data_csv['Prediksi Penayangan'] = predictions
 
             # Evaluasi menggunakan RMSE
@@ -155,7 +169,7 @@ else:
 
             # Tampilkan dan beri opsi download hasil prediksi
             st.write("**Hasil Prediksi**")
-            st.dataframe(data_csv[['Judul video', 'Penayangan', 'Prediksi Penayangan', 'Perlu Evaluasi']], height=300)
+            st.dataframe(data_csv[['Judul video', 'Hari sejak publikasi', 'Penayangan', 'Prediksi Penayangan', 'Perlu Evaluasi']], height=300)
 
             # Visualisasi dengan matplotlib
             fig, ax = plt.subplots(figsize=(10, 6))
